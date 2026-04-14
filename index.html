@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NRR Guardian</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      background: #f7f7f8;
+      color: #111827;
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────────── */
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 13px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-logo {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #111827;
+    }
+
+    .header-dot {
+      width: 7px; height: 7px;
+      background: #2563eb;
+      border-radius: 50%;
+      margin-right: 2px;
+      display: inline-block;
+    }
+
+    .header-date {
+      font-size: 0.8125rem;
+      color: #9ca3af;
+      flex: 1;
+    }
+
+    .btn-ghost {
+      padding: 6px 12px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      background: transparent;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #374151;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .btn-ghost:hover { background: #f3f4f6; border-color: #d1d5db; }
+
+    /* ── Page layout ──────────────────────────────────────────────────────── */
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 24px 60px;
+    }
+
+    /* ── Search / lookup panel ────────────────────────────────────────────── */
+    .search-panel {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 28px;
+    }
+
+    .search-panel-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #9ca3af;
+      margin-bottom: 12px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .input-group--key   { flex: 2; min-width: 200px; }
+    .input-group--co    { flex: 3; min-width: 200px; }
+
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #6b7280;
+    }
+
+    .input-field {
+      height: 36px;
+      padding: 0 11px;
+      font-size: 0.875rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      outline: none;
+      background: #fff;
+      color: #111827;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+
+    .input-field::placeholder { color: #9ca3af; }
+
+    .input-field:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .btn-analyze {
+      height: 36px;
+      padding: 0 18px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      background: #111827;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: background 0.12s;
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+
+    .btn-analyze:hover:not(:disabled) { background: #1f2937; }
+    .btn-analyze:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .spinner {
+      width: 13px; height: 13px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .analyze-error {
+      font-size: 0.8125rem;
+      color: #dc2626;
+      margin-top: 10px;
+    }
+
+    /* ── File-picker fallback ─────────────────────────────────────────────── */
+    .file-picker {
+      border: 2px dashed #e5e7eb;
+      border-radius: 10px;
+      padding: 36px 24px;
+      text-align: center;
+      margin-bottom: 24px;
+      background: #fff;
+    }
+
+    .file-picker p { font-size: 0.875rem; color: #6b7280; margin-bottom: 12px; }
+
+    .file-picker code {
+      background: #f3f4f6;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.8125rem;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    }
+
+    .btn-pick {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #111827;
+      color: #fff;
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-pick:hover { background: #1f2937; }
+
+    /* ── Cards grid ───────────────────────────────────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+    }
+
+    /* ── Card ─────────────────────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: box-shadow 0.18s, border-color 0.18s;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      border-color: #d1d5db;
+    }
+
+    .card.card-new {
+      animation: card-glow 1.6s ease-out forwards;
+    }
+
+    @keyframes card-glow {
+      0%   { box-shadow: 0 0 0 3px rgba(37,99,235,0.35); border-color: #93c5fd; }
+      100% { box-shadow: none; border-color: #e5e7eb; }
+    }
+
+    /* ── Card summary (always visible) ───────────────────────────────────── */
+    .card-summary {
+      padding: 17px 18px 14px;
+      user-select: none;
+    }
+
+    .card-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .card-identity { flex: 1; min-width: 0; }
+
+    .card-company {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-industry {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 1px;
+    }
+
+    .card-top-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .badge-expansion { background: #dcfce7; color: #15803d; }
+    .badge-churn     { background: #fee2e2; color: #b91c1c; }
+
+    /* Chevron */
+    .chevron {
+      width: 16px; height: 16px;
+      color: #9ca3af;
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .card.open .chevron { transform: rotate(180deg); }
+
+    /* Score bar */
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .score-bar-track {
+      flex: 1;
+      height: 5px;
+      background: #f3f4f6;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 10px;
+      width: 0;
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .score-bar-fill--expansion { background: #16a34a; }
+    .score-bar-fill--churn     { background: #dc2626; }
+
+    .score-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6b7280;
+      min-width: 26px;
+      text-align: right;
+    }
+
+    /* ── Card detail (expand/collapse) ───────────────────────────────────── */
+    .card-detail {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.3s ease;
+    }
+
+    .card.open .card-detail {
+      grid-template-rows: 1fr;
+    }
+
+    .card-detail-inner {
+      overflow: hidden;
+    }
+
+    .card-detail-content {
+      border-top: 1px solid #f3f4f6;
+      padding: 16px 18px 18px;
+    }
+
+    /* Detail sections */
+    .detail-section { margin-bottom: 14px; }
+    .detail-section:last-child { margin-bottom: 0; }
+
+    .detail-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+
+    .detail-text {
+      font-size: 0.8125rem;
+      color: #374151;
+      line-height: 1.6;
+    }
+
+    .email-block {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
+
+    .email-subject {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .email-body {
+      font-size: 0.8125rem;
+      color: #374151;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      font-family: inherit;
+      border-left: 2px solid #e5e7eb;
+      padding-left: 10px;
+    }
+
+    /* Copy button */
+    .btn-copy {
+      margin-top: 8px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 5px;
+      cursor: pointer;
+      color: #6b7280;
+      transition: background 0.12s;
+    }
+
+    .btn-copy:hover { background: #f3f4f6; }
+
+    /* ── Empty state ──────────────────────────────────────────────────────── */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 24px;
+      color: #9ca3af;
+    }
+
+    .empty-state h3 { font-size: 0.9375rem; font-weight: 500; margin-bottom: 6px; }
+    .empty-state p  { font-size: 0.8125rem; }
+
+    /* ── Refresh toast ────────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111827;
+      color: #f9fafb;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      max-width: 480px;
+      width: calc(100% - 48px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.18s;
+      pointer-events: none;
+    }
+
+    .toast.show { opacity: 1; pointer-events: auto; }
+
+    .toast-body { flex: 1; }
+
+    .toast code {
+      background: rgba(255,255,255,0.15);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 0.8125rem;
+    }
+
+    .btn-toast-close {
+      background: none; border: none;
+      color: #6b7280; cursor: pointer;
+      font-size: 1rem; line-height: 1; padding: 0;
+    }
+    .btn-toast-close:hover { color: #f9fafb; }
+
+    /* ── Responsive ───────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .search-row { flex-direction: column; }
+      .input-group--key, .input-group--co { flex: unset; width: 100%; }
+      .btn-analyze { width: 100%; justify-content: center; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<header class="header">
+  <span class="header-logo"><span class="header-dot"></span>NRR Guardian</span>
+  <span class="header-date" id="report-date"></span>
+  <button class="btn-ghost" id="btn-refresh">↻ Refresh</button>
+</header>
+
+<!-- ── Container ───────────────────────────────────────────────────────── -->
+<div class="container">
+
+  <!-- Live lookup panel -->
+  <div class="search-panel">
+    <div class="search-panel-title">Live Account Lookup</div>
+    <div class="search-row">
+      <div class="input-group input-group--key">
+        <label class="input-label" for="api-key-input">Anthropic API Key</label>
+        <input class="input-field" type="password" id="api-key-input"
+               placeholder="sk-ant-..." autocomplete="off">
+      </div>
+      <div class="input-group input-group--co">
+        <label class="input-label" for="company-input">Company Name</label>
+        <input class="input-field" type="text" id="company-input"
+               placeholder="e.g. Salesforce, Stripe, Workday…">
+      </div>
+      <button class="btn-analyze" id="btn-analyze">
+        <span id="analyze-label">Analyze →</span>
+      </button>
+    </div>
+    <div class="analyze-error" id="analyze-error" style="display:none"></div>
+  </div>
+
+  <!-- File-picker fallback for Chrome -->
+  <div class="file-picker" id="file-picker" style="display:none">
+    <p>Chrome blocks direct file reads. Select <code>nrr_report.md</code> to load the report:</p>
+    <label class="btn-pick">
+      Choose nrr_report.md
+      <input type="file" id="file-input" accept=".md" style="display:none">
+    </label>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="cards-grid" id="cards-grid"></div>
+
+</div>
+
+<!-- ── Refresh toast ───────────────────────────────────────────────────── -->
+<div class="toast" id="toast">
+  <span class="toast-body">
+    Run <code>python3 run_nrr.py</code> in your terminal, then reload this page.
+  </span>
+  <button class="btn-toast-close" id="btn-toast-close" aria-label="Dismiss">✕</button>
+</div>
+
+<!-- ── Script ──────────────────────────────────────────────────────────── -->
+<script>
+'use strict';
+
+// ── Constants ──────────────────────────────────────────────────────────────
+
+const LIVE_SYSTEM_PROMPT = `You are a Strategic Customer Success Manager (CSM) analyst.
+Research the given company using the web_search tool to find news from the last 30 days.
+Focus on: M&A activity, leadership changes (CEO/CFO/CTO), and sustainability targets.
+
+Respond with ONLY a JSON object — no prose, no markdown fences:
+{
+  "company": "<name>",
+  "industry": "<industry>",
+  "signal_found": "<1-2 sentences: what happened and why it matters commercially>",
+  "classification": "Expansion Opportunity" or "Churn Risk",
+  "recommended_action": "<one specific CSM next step>",
+  "urgency_score": <integer 1-10, 10 = most urgent>,
+  "email_subject": "<subject line referencing the specific signal>",
+  "email_body": "<3 sentences: reference the signal, tie it to value, propose a call>"
+}
+
+Urgency scoring guide:
+- Churn Risk with active M&A or divestiture: 8-10
+- Churn Risk with leadership change: 7-9
+- Expansion Opportunity with active spend signals: 7-9
+- Expansion Opportunity with roadmap alignment: 5-7`;
+
+// ── App state ──────────────────────────────────────────────────────────────
+
+let cards = [];   // { id, company, industry, classification, signal, action, score,
+                  //   emailSubject, emailBody, expanded, isNew }
+
+const industryMap = {};
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2);
+}
+
+function isExpansion(cls) {
+  return cls.toLowerCase().includes('expansion');
+}
+
+function inferScore(classification, signal) {
+  const s = (signal || '').toLowerCase();
+  let score = isExpansion(classification) ? 6 : 7;
+  if (s.match(/billion|€|major|significant/)) score += 1;
+  if (s.match(/divest|sell off|carve.out/))   score += isExpansion(classification) ? 0 : 2;
+  if (s.match(/acqui|merger|takeover/))        score += 1;
+  if (s.match(/ceo|cfo|cto|leadership|appoint/)) score += 1;
+  if (s.match(/q1|q2|closing|imminent|weeks/)) score += 1;
+  return Math.min(10, score);
+}
+
+function generateTemplateEmail(company, classification, signal) {
+  if (isExpansion(classification)) {
+    return {
+      subject: `${company} — Timing a conversation around recent news`,
+      body: `I've been following ${company}'s recent announcements closely and wanted to reach out. Based on what I'm seeing, there may be a strong opportunity to deepen our partnership in a way that aligns directly with your current priorities. Would you have 20 minutes this week for a quick call?`
+    };
+  }
+  return {
+    subject: `Checking in — ${company} partnership priorities`,
+    body: `I wanted to connect given some of the recent news around ${company}. During periods of change, it's important to us that our partnership continues to deliver clear, measurable value to your team. I'd love to schedule a brief call to hear what matters most to you right now.`
+  };
+}
+
+// ── Markdown parser ────────────────────────────────────────────────────────
+
+function parseReport(md) {
+  const lines = md.split('\n');
+
+  const headerLine = lines.find(l => /^#\s+NRR Intelligence Report/.test(l));
+  const date = headerLine
+    ? headerLine.replace(/^#\s+NRR Intelligence Report\s*[—–\-]\s*/, '').trim()
+    : '';
+
+  // Table rows
+  const rows = [];
+  let pastSep = false;
+
+  for (const line of lines) {
+    if (/^\|\s*Company\s*\|/.test(line)) { pastSep = false; continue; }
+    if (/^\|[-\s|]+\|/.test(line) && !pastSep) { pastSep = true; continue; }
+    if (pastSep) {
+      if (!line.startsWith('|')) { pastSep = false; continue; }
+      const cells = line.split('|').slice(1, -1)
+        .map(c => c.trim().replace(/\\\|/g, '|'));
+      if (cells.length >= 4 && cells[0]) {
+        rows.push({
+          company:        cells[0],
+          signal:         cells[1],
+          classification: cells[2],
+          action:         cells[3],
+        });
+      }
+    }
+  }
+
+  // Priority outreach (matched to the top account by name)
+  let priorityCompany = '';
+  let priorityEmail   = { subject: '', body: '' };
+
+  const outIdx = lines.findIndex(l => /^##\s*Priority Outreach/.test(l));
+  if (outIdx !== -1) {
+    const accountLine = lines.slice(outIdx, outIdx + 8)
+      .find(l => /Highest-priority account/.test(l));
+    if (accountLine) {
+      const m = accountLine.match(/Highest-priority account:\s*([^*\n—–\-]+)/);
+      if (m) priorityCompany = m[1].replace(/\*+/g, '').trim();
+    }
+
+    const emailLines = [];
+    for (let i = outIdx; i < lines.length; i++) {
+      if (lines[i].startsWith('> '))       emailLines.push(lines[i].slice(2));
+      else if (lines[i].trimEnd() === '>') emailLines.push('');
+    }
+    const emailText = emailLines.join('\n').trim();
+    const subIdx    = emailLines.findIndex(l => /^Subject:/i.test(l));
+
+    if (subIdx !== -1) {
+      priorityEmail.subject = emailLines[subIdx].replace(/^Subject:\s*/i, '');
+      priorityEmail.body    = emailLines.slice(subIdx + 1).join('\n').replace(/^\n+/, '');
+    } else {
+      priorityEmail.body = emailText;
+    }
+  }
+
+  // Build card objects
+  return {
+    date,
+    cards: rows.map(r => {
+      const isPriority = r.company === priorityCompany;
+      const template   = generateTemplateEmail(r.company, r.classification, r.signal);
+      return {
+        id:             uid(),
+        company:        r.company,
+        industry:       industryMap[r.company] || '',
+        classification: r.classification,
+        signal:         r.signal,
+        action:         r.action,
+        score:          inferScore(r.classification, r.signal),
+        emailSubject:   isPriority ? priorityEmail.subject : template.subject,
+        emailBody:      isPriority ? priorityEmail.body    : template.body,
+        expanded:       false,
+        isNew:          false,
+      };
+    }),
+  };
+}
+
+// ── Rendering ──────────────────────────────────────────────────────────────
+
+function chevronSVG() {
+  return `<svg class="chevron" viewBox="0 0 16 16" fill="none"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="4 6 8 10 12 6"/>
+  </svg>`;
+}
+
+function createCardEl(card) {
+  const isExp      = isExpansion(card.classification);
+  const badgeCls   = isExp ? 'badge-expansion' : 'badge-churn';
+  const barCls     = isExp ? 'score-bar-fill--expansion' : 'score-bar-fill--churn';
+  const pct        = card.score * 10;
+  const industry   = card.industry || (industryMap[card.company] || '');
+
+  const el = document.createElement('div');
+  el.className = 'card' + (card.expanded ? ' open' : '') + (card.isNew ? ' card-new' : '');
+  el.dataset.cardId = card.id;
+
+  el.innerHTML = `
+    <div class="card-summary">
+      <div class="card-top-row">
+        <div class="card-identity">
+          <div class="card-company">${esc(card.company)}</div>
+          ${industry ? `<div class="card-industry">${esc(industry)}</div>` : ''}
+        </div>
+        <div class="card-top-right">
+          <span class="badge ${badgeCls}">${esc(card.classification)}</span>
+          ${chevronSVG()}
+        </div>
+      </div>
+      <div class="score-row">
+        <div class="score-bar-track">
+          <div class="score-bar-fill ${barCls}" data-pct="${pct}" style="width:0"></div>
+        </div>
+        <span class="score-label">${card.score}/10</span>
+      </div>
+    </div>
+
+    <div class="card-detail">
+      <div class="card-detail-inner">
+        <div class="card-detail-content">
+          <div class="detail-section">
+            <div class="detail-label">Signal</div>
+            <div class="detail-text">${esc(card.signal)}</div>
+          </div>
+          <div class="detail-section">
+            <div class="detail-label">Recommended Action</div>
+            <div class="detail-text">${esc(card.action)}</div>
+          </div>
+          ${card.emailSubject || card.emailBody ? `
+          <div class="detail-section">
+            <div class="detail-label">Outreach Email</div>
+            <div class="email-block">
+              ${card.emailSubject
+                ? `<div class="email-subject">Subject: ${esc(card.emailSubject)}</div>`
+                : ''}
+              <pre class="email-body">${esc(card.emailBody)}</pre>
+            </div>
+            <button class="btn-copy" data-email="${esc(card.emailSubject + '\n\n' + card.emailBody)}">
+              Copy email
+            </button>
+          </div>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+  // Toggle on summary click
+  el.querySelector('.card-summary').addEventListener('click', () => toggleCard(card.id));
+
+  // Copy button
+  el.querySelector('.btn-copy')?.addEventListener('click', e => {
+    e.stopPropagation();
+    const text = e.currentTarget.dataset.email || '';
+    navigator.clipboard.writeText(text).then(() => {
+      e.currentTarget.textContent = 'Copied!';
+      setTimeout(() => { e.currentTarget.textContent = 'Copy email'; }, 1800);
+    });
+  });
+
+  return el;
+}
+
+function renderAll() {
+  const grid   = document.getElementById('cards-grid');
+  const sorted = [...cards].sort((a, b) => b.score - a.score);
+
+  grid.innerHTML = '';
+
+  if (!sorted.length) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <h3>No accounts loaded</h3>
+        <p>Run <code>python3 run_nrr.py</code> to generate a report, then reload —<br>
+           or use the lookup above to analyze a company directly.</p>
+      </div>`;
+    return;
+  }
+
+  sorted.forEach(card => {
+    const el = createCardEl(card);
+    grid.appendChild(el);
+  });
+
+  // Animate score bars after paint
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    grid.querySelectorAll('.score-bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.pct + '%';
+    });
+  }));
+}
+
+function toggleCard(id) {
+  const card = cards.find(c => c.id === id);
+  if (!card) return;
+  card.expanded = !card.expanded;
+
+  const el = document.querySelector(`[data-card-id="${id}"]`);
+  if (el) el.classList.toggle('open', card.expanded);
+}
+
+// ── Industry lookup ────────────────────────────────────────────────────────
+
+async function loadIndustry() {
+  try {
+    const res = await fetch('./clients.csv');
+    if (!res.ok) return;
+    (await res.text()).split('\n').slice(1).forEach(line => {
+      const [co, ind] = line.split(',').map(s => s.trim());
+      if (co && ind) industryMap[co] = ind;
+    });
+  } catch (_) {}
+}
+
+// ── File loading ───────────────────────────────────────────────────────────
+
+async function tryFetch() {
+  try {
+    const res = await fetch('./nrr_report.md');
+    if (!res.ok) throw new Error();
+    return await res.text();
+  } catch (_) { return null; }
+}
+
+function loadMarkdown(md) {
+  const { date, cards: parsed } = parseReport(md);
+  document.getElementById('report-date').textContent = date ? `Report: ${date}` : '';
+  cards = parsed;
+  renderAll();
+}
+
+document.getElementById('file-input').addEventListener('change', function () {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('file-picker').style.display = 'none';
+    loadMarkdown(e.target.result);
+  };
+  reader.readAsText(file);
+});
+
+// ── Anthropic API — live lookup ────────────────────────────────────────────
+
+async function researchCompany(apiKey, companyName) {
+  const messages = [{
+    role: 'user',
+    content: `Research "${companyName}". Search for news from the last 30 days ` +
+             `covering M&A, leadership changes, and sustainability targets. ` +
+             `Return your analysis as the JSON object described in your instructions.`
+  }];
+
+  for (let i = 0; i < 6; i++) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1024,
+        system: LIVE_SYSTEM_PROMPT,
+        tools: [{ type: 'web_search_20260209', name: 'web_search', allowed_callers: ['direct'] }],
+        messages,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    if (data.stop_reason === 'end_turn') {
+      const textBlock = data.content.find(b => b.type === 'text');
+      if (!textBlock) throw new Error('No text in response');
+      const t = textBlock.text;
+      const s = t.indexOf('{'), e = t.lastIndexOf('}') + 1;
+      if (s === -1 || e <= s) throw new Error('No JSON found in response');
+      return JSON.parse(t.slice(s, e));
+    }
+
+    if (data.stop_reason === 'pause_turn') {
+      messages.push({ role: 'assistant', content: data.content });
+      messages.push({ role: 'user', content: 'Please finish your analysis and return the JSON.' });
+      continue;
+    }
+
+    throw new Error(`Unexpected stop: ${data.stop_reason}`);
+  }
+
+  throw new Error('Analysis incomplete after retries — try again.');
+}
+
+// ── Analyze button ─────────────────────────────────────────────────────────
+
+document.getElementById('btn-analyze').addEventListener('click', async () => {
+  const apiKey  = document.getElementById('api-key-input').value.trim();
+  const company = document.getElementById('company-input').value.trim();
+  const errEl   = document.getElementById('analyze-error');
+  const btn     = document.getElementById('btn-analyze');
+  const label   = document.getElementById('analyze-label');
+
+  errEl.style.display = 'none';
+
+  if (!apiKey) { showError('Enter your Anthropic API key.'); return; }
+  if (!company) { showError('Enter a company name.'); return; }
+
+  // Loading state
+  btn.disabled = true;
+  label.innerHTML = '<span class="spinner"></span> Analyzing…';
+
+  try {
+    const result = await researchCompany(apiKey, company);
+
+    const newCard = {
+      id:             uid(),
+      company:        result.company        || company,
+      industry:       result.industry       || industryMap[company] || '',
+      classification: result.classification || 'Churn Risk',
+      signal:         result.signal_found   || '',
+      action:         result.recommended_action || '',
+      score:          Number(result.urgency_score) || inferScore(result.classification, result.signal_found),
+      emailSubject:   result.email_subject  || '',
+      emailBody:      result.email_body     || '',
+      expanded:       true,   // open the new card automatically
+      isNew:          true,
+    };
+
+    cards.push(newCard);
+    renderAll();
+
+    // Scroll to the new card
+    setTimeout(() => {
+      const el = document.querySelector(`[data-card-id="${newCard.id}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+
+    document.getElementById('company-input').value = '';
+
+  } catch (err) {
+    showError(err.message || 'Something went wrong — check your API key and try again.');
+  } finally {
+    btn.disabled = false;
+    label.textContent = 'Analyze →';
+  }
+
+  function showError(msg) {
+    errEl.textContent = msg;
+    errEl.style.display = 'block';
+  }
+});
+
+// Enter key on company input triggers analyze
+document.getElementById('company-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-analyze').click();
+});
+
+// ── Refresh toast ──────────────────────────────────────────────────────────
+
+document.getElementById('btn-refresh').addEventListener('click', () => {
+  document.getElementById('toast').classList.add('show');
+});
+
+document.getElementById('btn-toast-close').addEventListener('click', () => {
+  document.getElementById('toast').classList.remove('show');
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+
+(async () => {
+  await loadIndustry();
+  const md = await tryFetch();
+  if (md !== null) {
+    loadMarkdown(md);
+  } else {
+    renderAll(); // show empty state
+    document.getElementById('file-picker').style.display = '';
+  }
+})();
+</script>
+</body>
+</html>
