@@ -17,6 +17,8 @@ Usage:
 import csv
 import json
 import os
+import re
+import time
 from datetime import date
 from pathlib import Path
 
@@ -26,7 +28,7 @@ import anthropic
 # Configuration
 # ---------------------------------------------------------------------------
 
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-sonnet-4-5"
 MAX_TOKENS = 2048
 CSV_PATH = Path("clients.csv")
 REPORT_PATH = Path("nrr_report.md")
@@ -38,7 +40,7 @@ REPORT_PATH = Path("nrr_report.md")
 # first API call. All subsequent per-company calls read it from cache at
 # ~0.1x the normal input token cost.
 #
-# Note: the minimum cacheable prefix for claude-sonnet-4-20250514 is 1024
+# Note: the minimum cacheable prefix for claude-sonnet-4-5 is 1024
 # tokens. In a production deployment the system prompt would typically be
 # longer (persona details, product context, example classifications); the
 # cache_control annotation is already in the right place for that expansion.
@@ -130,7 +132,7 @@ def research_company(client: anthropic.Anthropic, company: str, industry: str) -
                     "cache_control": {"type": "ephemeral"},
                 }
             ],
-            tools=[{"type": "web_search_20260209", "name": "web_search"}],
+            tools=[{"type": "web_search_20260209", "name": "web_search", "allowed_callers": ["direct"]}],
             messages=messages,
         )
 
@@ -282,6 +284,9 @@ def main():
         result = research_company(client, company, industry)
         results.append(result)
         print(result["classification"])
+        if len(results) < len(companies):
+            print("  Waiting 30s before next call...", flush=True)
+            time.sleep(30)
 
     # Select the highest-priority account for the outreach section.
     # Prefer Expansion Opportunity; fall back to the first result.
@@ -296,6 +301,7 @@ def main():
     today = date.today().strftime("%B %d, %Y")
     report = build_report(results, today, top, email)
 
+    report = re.sub(r'</?cite[^>]*>', '', report)
     REPORT_PATH.write_text(report, encoding="utf-8")
     print(f"Report written to {REPORT_PATH}")
 
